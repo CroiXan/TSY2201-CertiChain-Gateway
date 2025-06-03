@@ -1,5 +1,6 @@
 package com.certichain.gateway.config;
 
+import java.io.BufferedReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -39,35 +40,48 @@ public class FabricConfig {
     @Value("${fabric.identity.mspPath}")
     private String mspPath;
 
+    @Value("${fabric.user.cert}")
+    private String certPath;
+
+    @Value("${fabric.user.key}")
+    private String keyPath;
+
+    @Value("${fabric.peer.tlsCert}")
+    private String tlsCert;
+
     @Bean
     public Contract fabricContract() throws Exception {
-        Path cryptoPath = Paths.get(mspPath);
 
-        Path certPath = Files.list(cryptoPath.resolve("users/User1@org1.example.com/msp/signcerts")).findFirst().get();
-        Path keyPath = Files.list(cryptoPath.resolve("users/User1@org1.example.com/msp/keystore")).findFirst().get();
-        Path tlsCertPath = cryptoPath.resolve("peers/peer0.org1.example.com/tls/ca.crt");
+        Path cert = Paths.get(certPath);
+        Path key = Paths.get(keyPath);
+        Path tlsCertPath = Paths.get(tlsCert);
 
-        var certificate = Identities.readX509Certificate(Files.newBufferedReader(certPath));
-        var privateKey = Identities.readPrivateKey(Files.newBufferedReader(keyPath));
+        try (BufferedReader certReader = Files.newBufferedReader(cert)) {
+            var certificate = Identities.readX509Certificate(certReader);
 
-        X509Identity identity = new X509Identity(mspId, certificate);
-        Signer signer = Signers.newPrivateKeySigner(privateKey);
+            try (BufferedReader keyReader = Files.newBufferedReader(key)) {
+                var privateKey = Identities.readPrivateKey(keyReader);
+                X509Identity identity = new X509Identity(mspId, certificate);
+                Signer signer = Signers.newPrivateKeySigner(privateKey);
 
-        var tlsCredentials = TlsChannelCredentials.newBuilder()
-                .trustManager(tlsCertPath.toFile())
-                .build();
+                var tlsCredentials = TlsChannelCredentials.newBuilder()
+                        .trustManager(tlsCertPath.toFile())
+                        .build();
 
-        ManagedChannel channel = Grpc.newChannelBuilder(peerEndpoint, tlsCredentials)
-                .overrideAuthority(overrideAuthority)
-                .build();
+                ManagedChannel channel = Grpc.newChannelBuilder(peerEndpoint, tlsCredentials)
+                        .overrideAuthority(overrideAuthority)
+                        .build();
 
-        Gateway gateway = Gateway.newInstance()
-                .identity(identity)
-                .signer(signer)
-                .connection(channel)
-                .connect();
+                Gateway gateway = Gateway.newInstance()
+                        .identity(identity)
+                        .signer(signer)
+                        .connection(channel)
+                        .connect();
 
-        return gateway.getNetwork(channelName).getContract(chaincodeName);
+                return gateway.getNetwork(channelName).getContract(chaincodeName);
+            }
+        }
+
     }
-    
+
 }
