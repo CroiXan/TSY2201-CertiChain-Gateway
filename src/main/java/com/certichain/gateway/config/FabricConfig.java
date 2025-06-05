@@ -1,8 +1,6 @@
 package com.certichain.gateway.config;
 
-import java.io.BufferedReader;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.hyperledger.fabric.client.Contract;
@@ -31,12 +29,6 @@ public class FabricConfig {
     @Value("${fabric.msp.id}")
     private String mspId;
 
-    @Value("${fabric.channel.name}")
-    private String channelName;
-
-    @Value("${fabric.chaincode.name}")
-    private String chaincodeName;
-
     @Value("${fabric.identity.mspPath}")
     private String mspPath;
 
@@ -49,39 +41,43 @@ public class FabricConfig {
     @Value("${fabric.peer.tlsCert}")
     private String tlsCert;
 
+
     @Bean
-    public Contract fabricContract() throws Exception {
+    public Gateway gateway() throws Exception {
+        var cert = Identities.readX509Certificate(Files.newBufferedReader(Paths.get(certPath)));
+        var key = Identities.readPrivateKey(Files.newBufferedReader(Paths.get(keyPath)));
 
-        Path cert = Paths.get(certPath);
-        Path key = Paths.get(keyPath);
-        Path tlsCertPath = Paths.get(tlsCert);
+        X509Identity identity = new X509Identity(mspId, cert);
+        Signer signer = Signers.newPrivateKeySigner(key);
 
-        try (BufferedReader certReader = Files.newBufferedReader(cert)) {
-            var certificate = Identities.readX509Certificate(certReader);
+        var tlsCredentials = TlsChannelCredentials.newBuilder()
+                .trustManager(Paths.get(tlsCert).toFile())
+                .build();
 
-            try (BufferedReader keyReader = Files.newBufferedReader(key)) {
-                var privateKey = Identities.readPrivateKey(keyReader);
-                X509Identity identity = new X509Identity(mspId, certificate);
-                Signer signer = Signers.newPrivateKeySigner(privateKey);
+        ManagedChannel channel = Grpc.newChannelBuilder(peerEndpoint, tlsCredentials)
+                .overrideAuthority(overrideAuthority)
+                .build();
 
-                var tlsCredentials = TlsChannelCredentials.newBuilder()
-                        .trustManager(tlsCertPath.toFile())
-                        .build();
+        return Gateway.newInstance()
+                .identity(identity)
+                .signer(signer)
+                .connection(channel)
+                .connect();
+    }
 
-                ManagedChannel channel = Grpc.newChannelBuilder(peerEndpoint, tlsCredentials)
-                        .overrideAuthority(overrideAuthority)
-                        .build();
+    @Bean(name = "publicDocContract")
+    public Contract publicDocContract(Gateway gateway) {
+        return gateway.getNetwork("public-document").getContract("publicDoc");
+    }
 
-                Gateway gateway = Gateway.newInstance()
-                        .identity(identity)
-                        .signer(signer)
-                        .connection(channel)
-                        .connect();
+    @Bean(name = "privateDocContract")
+    public Contract privateDocContract(Gateway gateway) {
+        return gateway.getNetwork("private-document").getContract("privateDoc");
+    }
 
-                return gateway.getNetwork(channelName).getContract(chaincodeName);
-            }
-        }
-
+    @Bean(name = "basiContract")
+    public Contract basiContract(Gateway gateway) {
+        return gateway.getNetwork("mychannel").getContract("basic");
     }
 
 }
