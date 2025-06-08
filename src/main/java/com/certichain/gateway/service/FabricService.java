@@ -6,6 +6,8 @@ import org.hyperledger.fabric.client.Contract;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
+import com.certichain.gateway.model.PrivateDocument;
+
 @Service
 public class FabricService {
 
@@ -64,6 +66,43 @@ public class FabricService {
     public String queryAuditLogs(String filterType, String filterValue, String startDate, String endDate) throws Exception {
         byte[] result = publicContract.evaluateTransaction(
                 "QueryAuditLogs", filterType, filterValue, startDate, endDate);
+        return new String(result, StandardCharsets.UTF_8);
+    }
+
+    public void savePrivateDocument(PrivateDocument doc) throws Exception {
+        privateContract.submitTransaction(
+            "SavePrivateDocument",
+            doc.getDocumentId(),
+            doc.getInstitution(),
+            doc.getUserId(),
+            doc.getName(),
+            doc.getPath(),
+            doc.getHash(),
+            doc.getState()
+        );
+    }
+
+    public void updateDocumentState(String documentId, String newState) throws Exception {
+        privateContract.submitTransaction("UpdateDocumentState", documentId, newState);
+    }
+
+    public String getPrivateDocumentById(String documentId) throws Exception {
+        byte[] result = privateContract.evaluateTransaction("GetPrivateDocumentByID", documentId);
+        return new String(result, StandardCharsets.UTF_8);
+    }
+
+    public String queryPrivateByInstitution(String institution) throws Exception {
+        byte[] result = privateContract.evaluateTransaction("QueryPrivateByInstitution", institution);
+        return new String(result, StandardCharsets.UTF_8);
+    }
+
+    public String queryPrivateByUser(String userId) throws Exception {
+        byte[] result = privateContract.evaluateTransaction("QueryPrivateByUser", userId);
+        return new String(result, StandardCharsets.UTF_8);
+    }
+
+    public String queryPrivateAuditLogs(String filterType, String filterValue, String startDate, String endDate) throws Exception {
+        byte[] result = privateContract.evaluateTransaction("QueryAuditLogs", filterType, filterValue, startDate, endDate);
         return new String(result, StandardCharsets.UTF_8);
     }
 }
