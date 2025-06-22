@@ -72,7 +72,7 @@ public class FabricConfig {
 
     @Bean(name = "privateDocContract")
     public Contract privateDocContract(Gateway gateway) {
-        return gateway.getNetwork("private-document").getContract("privateDoc");
+        return gateway.getNetwork("private-document").getContract("privateDocument");
     }
 
     @Bean(name = "basiContract")

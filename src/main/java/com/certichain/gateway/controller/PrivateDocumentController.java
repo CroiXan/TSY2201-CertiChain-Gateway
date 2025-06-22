@@ -1,5 +1,6 @@
 package com.certichain.gateway.controller;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.springframework.web.bind.annotation.GetMapping;
@@ -40,21 +41,37 @@ public class PrivateDocumentController {
     }
 
     @GetMapping("/{id}")
-    public PrivateDocument getPrivateDocument(@PathVariable String id) throws Exception {
-        String json = service.getPrivateDocumentById(id);
-        return objectMapper.readValue(json, PrivateDocument.class);
+    public PrivateDocument getPrivateDocument(@PathVariable String id){
+        String json;
+        try {
+            json = service.getPrivateDocumentById(id);
+            return objectMapper.readValue(json, PrivateDocument.class);
+        } catch (Exception e) {
+            return new PrivateDocument();
+        }
     }
 
     @GetMapping("/institution/{institution}")
-    public List<PrivateDocument> queryByInstitution(@PathVariable String institution) throws Exception {
-        String json = service.queryPrivateByInstitution(institution);
-        return objectMapper.readValue(json, new TypeReference<>() {});
+    public List<PrivateDocument> queryByInstitution(@PathVariable String institution){
+        String json;
+        try {
+            json = service.queryPrivateByInstitution(institution);
+            return objectMapper.readValue(json, new TypeReference<>() {});
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
+        
     }
 
     @GetMapping("/user/{userId}")
-    public List<PrivateDocument> queryByUser(@PathVariable String userId) throws Exception {
-        String json = service.queryPrivateByUser(userId);
-        return objectMapper.readValue(json, new TypeReference<>() {});
+    public List<PrivateDocument> queryByUser(@PathVariable String userId){
+        String json;
+        try {
+            json = service.queryPrivateByUser(userId);
+            return objectMapper.readValue(json, new TypeReference<>() {});
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
     }
 
     @GetMapping("/audit")
@@ -63,9 +80,15 @@ public class PrivateDocumentController {
             @RequestParam String filterValue,
             @RequestParam String startDate,
             @RequestParam String endDate
-    ) throws Exception {
-        String json = service.queryPrivateAuditLogs(filterType, filterValue, startDate, endDate);
-        return objectMapper.readValue(json, new TypeReference<>() {});
+    ){
+        String json;
+        try {
+            json = service.queryPrivateAuditLogs(filterType, filterValue, startDate, endDate);
+            return objectMapper.readValue(json, new TypeReference<>() {});
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
+        
     }
 
 }

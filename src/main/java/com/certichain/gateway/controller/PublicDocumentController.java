@@ -1,5 +1,6 @@
 package com.certichain.gateway.controller;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,21 +35,36 @@ public class PublicDocumentController {
     }
 
     @GetMapping("/{id}")
-    public PublicDocument getDocumentById(@PathVariable String id) throws Exception {
-        String result = service.getDocumentById(id);
-        return objectMapper.readValue(result, new TypeReference<PublicDocument>() {});
+    public PublicDocument getDocumentById(@PathVariable String id) {
+        String result;
+        try {
+            result = service.getDocumentById(id);
+            return objectMapper.readValue(result, new TypeReference<PublicDocument>() {});
+        } catch (Exception e) {
+            return new PublicDocument();
+        }
     }
 
     @GetMapping("/institution/{institution}")
-    public List<PublicDocument> queryByInstitution(@PathVariable String institution) throws Exception {
-        String result = service.queryByInstitution(institution);
-        return objectMapper.readValue(result, new TypeReference<List<PublicDocument>>() {});
+    public List<PublicDocument> queryByInstitution(@PathVariable String institution) {
+        String result;
+        try {
+            result = service.queryByInstitution(institution);
+            return objectMapper.readValue(result, new TypeReference<List<PublicDocument>>() {});
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
     }
 
     @GetMapping("/user/{userId}")
-    public List<PublicDocument> queryByUser(@PathVariable String userId) throws Exception {
-        String result = service.queryByUser(userId);
-        return objectMapper.readValue(result, new TypeReference<List<PublicDocument>>() {});
+    public List<PublicDocument> queryByUser(@PathVariable String userId) {
+        String result;
+        try {
+            result = service.queryByUser(userId);
+            return objectMapper.readValue(result, new TypeReference<List<PublicDocument>>() {});
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
     }
 
     @GetMapping("/audit")
@@ -57,9 +73,14 @@ public class PublicDocumentController {
         @RequestParam String filterValue,
         @RequestParam String startDate,
         @RequestParam String endDate
-    ) throws Exception {
-        String result = service.queryAuditLogs(filterType, filterValue, startDate, endDate);
-        return objectMapper.readValue(result, new TypeReference<List<PublicDocumentAuditLog>>() {});
+    ) {
+        String result;
+        try {
+            result = service.queryAuditLogs(filterType, filterValue, startDate, endDate);
+            return objectMapper.readValue(result, new TypeReference<List<PublicDocumentAuditLog>>() {});
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
     }
     
 }
